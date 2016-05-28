@@ -1,2 +1,2 @@
-# kafka-websocket-proxy
+# anubis-server
 Kafka proxy over WebSocket
