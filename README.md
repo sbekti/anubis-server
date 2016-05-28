@@ -1,2 +1,2 @@
-# kafka-websocket-server
+# kafka-websocket-proxy
 Kafka proxy over WebSocket
