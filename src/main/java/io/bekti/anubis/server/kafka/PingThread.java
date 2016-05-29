@@ -36,7 +36,7 @@ public class PingThread extends Thread {
                     client.shutdown();
                 }
 
-                Thread.sleep(5000);
+                Thread.sleep(25000);
             } catch (IOException ioe) {
                 client.shutdown();
             } catch (InterruptedException ignored) {
