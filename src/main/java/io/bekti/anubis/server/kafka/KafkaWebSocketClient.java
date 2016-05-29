@@ -2,6 +2,7 @@ package io.bekti.anubis.server.kafka;
 
 import io.bekti.anubis.server.types.InboundMessage;
 import io.bekti.anubis.server.types.OutboundMessage;
+import io.bekti.anubis.server.types.SeekRequest;
 import io.bekti.anubis.server.utils.SharedConfiguration;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -16,12 +17,9 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 public class KafkaWebSocketClient extends Thread {
@@ -30,21 +28,19 @@ public class KafkaWebSocketClient extends Thread {
 
     private Properties consumerProps;
     private Properties producerProps;
+
     private KafkaConsumer<String, String> consumer;
     private KafkaProducer<String, String> producer;
+
     private BlockingQueue<InboundMessage> consumerQueue;
     private BlockingQueue<OutboundMessage> producerQueue;
+    private Queue<SeekRequest> seekRequestQueue;
 
     private Session session;
     private List<String> topics;
 
-    private AtomicBoolean seekRequired = new AtomicBoolean(false);
-    private AtomicReference<String> seekTopic = new AtomicReference<>();
-    private AtomicReference<String> seekOffset = new AtomicReference<>();
-
     private ExecutorService executorService = Executors.newFixedThreadPool(2);
     private AtomicBoolean running = new AtomicBoolean(false);
-
 
     public KafkaWebSocketClient(String groupId, List<String> topics, Session session) {
         consumerProps = new Properties();
@@ -69,6 +65,7 @@ public class KafkaWebSocketClient extends Thread {
 
         consumerQueue = new LinkedBlockingQueue<>();
         producerQueue = new LinkedBlockingQueue<>();
+        seekRequestQueue = new LinkedList<>();
     }
 
     @Override
@@ -139,25 +136,25 @@ public class KafkaWebSocketClient extends Thread {
             consumer.subscribe(topics);
 
             while (true) {
-                if (seekRequired.get()) {
-                    switch (seekOffset.get()) {
+                while (!seekRequestQueue.isEmpty()) {
+                    SeekRequest seekRequest = seekRequestQueue.remove();
+
+                    switch (seekRequest.getOffset()) {
                         case "beginning":
-                            consumer.seekToBeginning(getPartitionsForTopic(seekTopic.get(), consumer));
+                            consumer.seekToBeginning(getPartitionsForTopic(seekRequest.getTopic(), consumer));
                             break;
                         case "end":
-                            consumer.seekToEnd(getPartitionsForTopic(seekTopic.get(), consumer));
+                            consumer.seekToEnd(getPartitionsForTopic(seekRequest.getTopic(), consumer));
                             break;
                         default:
                             consumer.assignment()
                                     .stream()
-                                    .filter(partition -> partition.topic().equals(seekTopic.get()))
+                                    .filter(partition -> partition.topic().equals(seekRequest.getTopic()))
                                     .forEach(partition ->
-                                        consumer.seek(partition, Long.parseLong(seekOffset.get()))
+                                        consumer.seek(partition, Long.parseLong(seekRequest.getOffset()))
                                     );
                             break;
                     }
-
-                    seekRequired.set(false);
                 }
 
                 ConsumerRecords<String, String> records = consumer.poll(1000);
@@ -228,9 +225,7 @@ public class KafkaWebSocketClient extends Thread {
     }
 
     public void requestSeek(String topic, String offset) {
-        seekTopic.set(topic);
-        seekOffset.set(offset);
-        seekRequired.set(true);
+        seekRequestQueue.add(new SeekRequest(topic, offset));
     }
 
     private List<TopicPartition> getPartitionsForTopic(String topic, KafkaConsumer<?, ?> consumer) {
