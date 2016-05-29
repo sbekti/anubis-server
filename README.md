@@ -1,6 +1,9 @@
 # anubis-server
 Kafka proxy server over WebSocket.
 
+## Pre-Installation
+Make sure that you use Kafka 0.10!
+
 ## Installation
 Clone the repository:
 ~~~shell
@@ -18,6 +21,46 @@ vim conf/server.properties
 Run the server:
 ~~~shell
 bin/start.sh
+~~~
+
+## Protocol
+
+Send these JSONs over the WebSocket connection to perform the corresponding commands.
+
+### Subscribing
+~~~javascript
+{
+  "action": "connect",
+  "topics": ["fruits", "cities"],
+  "groupId": "testgroup"
+}
+~~~
+
+After subscribing, you will get the messages automatically over the WebSocket connection.
+
+### Publishing
+~~~javascript
+{
+  "action": "publish",
+  "topic": "fruits",
+  "value": "apple"
+}
+~~~
+
+### Seeking
+~~~javascript
+{
+  "action": "seek",
+  "topic": "fruits",
+  "value": "beginning" // or "end" or "3"
+}
+~~~
+
+### Disconnecting
+~~~javascript
+{
+  "action": "disconnect"
+}
 ~~~
 
 ## License
