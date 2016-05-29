@@ -19,13 +19,11 @@ public class PublisherThread extends Thread {
     private AtomicBoolean running = new AtomicBoolean(false);
 
     private BlockingQueue<OutboundMessage> outboundQueue;
-    private Session session;
 
     private KafkaProducer<String, String> producer;
 
-    public PublisherThread(BlockingQueue<OutboundMessage> outboundQueue, Session session) {
+    public PublisherThread(BlockingQueue<OutboundMessage> outboundQueue) {
         this.outboundQueue = outboundQueue;
-        this.session = session;
     }
 
     @Override

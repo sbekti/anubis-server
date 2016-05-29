@@ -56,9 +56,15 @@ public class WebSocketServer extends Thread {
     public void shutdown() {
         log.info("Shutting down...");
 
-        if (this.running.get() && this.server != null && !this.server.isStopped()) {
+        if (running.get() && server != null && !server.isStopped()) {
             try {
-                this.server.stop();
+                for (Map.Entry<Session, KafkaWebSocketClient> entry : kafkaClients.entrySet()) {
+                    KafkaWebSocketClient client = entry.getValue();
+                    client.shutdown();
+                    client.join();
+                }
+
+                server.stop();
                 log.info("Successfully stopped server.");
             } catch (Exception e) {
                 log.error("Error while trying to shutdown server.");

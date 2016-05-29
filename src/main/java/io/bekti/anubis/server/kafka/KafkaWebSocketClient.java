@@ -36,7 +36,7 @@ public class KafkaWebSocketClient extends Thread {
         dispatcherThread = new DispatcherThread(inboundQueue, session);
         dispatcherThread.start();
 
-        publisherThread = new PublisherThread(outboundQueue, session);
+        publisherThread = new PublisherThread(outboundQueue);
         publisherThread.start();
 
         log.debug("Entering main client loop...");
