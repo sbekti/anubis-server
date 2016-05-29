@@ -30,7 +30,7 @@ Send these JSONs over the WebSocket connection to perform the corresponding comm
 ### Subscribing
 ~~~javascript
 {
-  "action": "subscribe",
+  "event": "subscribe",
   "topics": ["fruits", "cities"],
   "groupId": "testgroup"
 }
@@ -40,7 +40,7 @@ After subscribing, you will get the messages automatically over the WebSocket co
 ### Publishing
 ~~~javascript
 {
-  "action": "publish",
+  "event": "publish",
   "topic": "fruits",
   "value": "apple"
 }
@@ -49,7 +49,7 @@ After subscribing, you will get the messages automatically over the WebSocket co
 ### Committing Records
 ~~~javascript
 {
-  "action": "commit",
+  "event": "commit",
   "topic": "fruits",
   "partitionId": 0
   "offset": 3
@@ -59,16 +59,16 @@ After subscribing, you will get the messages automatically over the WebSocket co
 ### Seeking
 ~~~javascript
 {
-  "action": "seek",
+  "event": "seek",
   "topic": "fruits",
-  "value": "beginning" // or "end" or "3"
+  "value": "beginning" // or "end" or 3
 }
 ~~~
 
 ### Unsubscribing
 ~~~javascript
 {
-  "action": "unsubscribe"
+  "event": "unsubscribe"
 }
 ~~~
 
