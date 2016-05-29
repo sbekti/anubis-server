@@ -74,6 +74,8 @@ public class KafkaWebSocketClient extends Thread {
                     pingThread.shutdown();
                     pingThread.join();
                 }
+            } catch (InterruptedException ignored) {
+
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
             }
