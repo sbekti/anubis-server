@@ -1,7 +1,7 @@
 # anubis-server
 Kafka proxy server over WebSocket.
 
-## Pre-Installation
+## Prerequisites
 Make sure that you use Kafka 0.10!
 
 ## Installation
@@ -35,7 +35,6 @@ Send these JSONs over the WebSocket connection to perform the corresponding comm
   "groupId": "testgroup"
 }
 ~~~
-
 After subscribing, you will get the messages automatically over the WebSocket connection.
 
 ### Publishing
