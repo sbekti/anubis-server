@@ -8,6 +8,7 @@ import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +28,7 @@ public class KafkaWebSocketServletHandler {
 
         try {
             JSONObject body = new JSONObject(message);
-            String action = body.getString("action");
+            String action = body.getString("event");
 
             switch (action) {
                 case "subscribe":
@@ -127,7 +128,15 @@ public class KafkaWebSocketServletHandler {
 
         if (client != null) {
             String topic = body.getString("topic");
-            String offset = body.getString("offset");
+
+            String offset;
+
+            try {
+                offset = body.getString("offset");
+            } catch (JSONException e) {
+                offset = String.valueOf(body.getLong("offset"));
+            }
+
             client.seek(topic, offset);
         }
     }
