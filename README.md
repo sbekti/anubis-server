@@ -46,6 +46,16 @@ After subscribing, you will get the messages automatically over the WebSocket co
 }
 ~~~
 
+### Committing Records
+~~~javascript
+{
+  "action": "commit",
+  "topic": "fruits",
+  "partitionId": 0
+  "offset": 3
+}
+~~~
+
 ### Seeking
 ~~~javascript
 {

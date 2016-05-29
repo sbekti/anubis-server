@@ -36,13 +36,15 @@ public class DispatcherThread extends Thread {
                 if (inboundMessage == null) continue;
 
                 if (session.isOpen()) {
-                    JSONObject jsonResponse = new JSONObject();
-                    jsonResponse.put("topic", inboundMessage.getTopic());
-                    jsonResponse.put("offset", inboundMessage.getOffset());
-                    jsonResponse.put("key", inboundMessage.getKey());
-                    jsonResponse.put("value", inboundMessage.getValue());
+                    JSONObject payload = new JSONObject();
+                    payload.put("event", "message");
+                    payload.put("topic", inboundMessage.getTopic());
+                    payload.put("partition", inboundMessage.getPartition());
+                    payload.put("offset", inboundMessage.getOffset());
+                    payload.put("key", inboundMessage.getKey());
+                    payload.put("value", inboundMessage.getValue());
 
-                    session.getRemote().sendString(jsonResponse.toString());
+                    session.getRemote().sendString(payload.toString());
                 }
             } catch (Exception e) {
                 log.error(e.getMessage(), e);

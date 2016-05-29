@@ -1,5 +1,6 @@
 package io.bekti.anubis.server.kafka;
 
+import io.bekti.anubis.server.types.CommitRequest;
 import io.bekti.anubis.server.types.InboundMessage;
 import io.bekti.anubis.server.types.SeekRequest;
 import io.bekti.anubis.server.utils.SharedConfiguration;
@@ -28,6 +29,7 @@ public class ConsumerThread extends Thread {
 
     private KafkaConsumer<String, String> consumer;
     private Queue<SeekRequest> seekRequestQueue = new LinkedList<>();
+    private Queue<CommitRequest> commitRequestQueue = new LinkedList<>();
 
     public ConsumerThread(List<String> topics, String groupId, BlockingQueue<InboundMessage> inboundQueue) {
         this.inboundQueue = inboundQueue;
@@ -52,20 +54,39 @@ public class ConsumerThread extends Thread {
 
                     switch (seekRequest.getOffset()) {
                         case "beginning":
-                            consumer.seekToBeginning(getPartitionsForTopic(seekRequest.getTopic(), consumer));
+                            consumer.seekToBeginning(getPartitionsForTopic(seekRequest.getTopic()));
                             break;
                         case "end":
-                            consumer.seekToEnd(getPartitionsForTopic(seekRequest.getTopic(), consumer));
+                            consumer.seekToEnd(getPartitionsForTopic(seekRequest.getTopic()));
                             break;
                         default:
                             consumer.assignment()
                                     .stream()
                                     .filter(partition -> partition.topic().equals(seekRequest.getTopic()))
                                     .forEach(partition ->
-                                        consumer.seek(partition, Long.parseLong(seekRequest.getOffset()))
+                                            consumer.seek(partition, Long.parseLong(seekRequest.getOffset()))
                                     );
                             break;
                     }
+                }
+
+                while (!commitRequestQueue.isEmpty()) {
+                    CommitRequest commitRequest = commitRequestQueue.remove();
+
+                    String topic = commitRequest.getTopic();
+                    int partitionId = commitRequest.getPartition();
+                    long offset = commitRequest.getOffset();
+
+                    TopicPartition topicPartition = consumer.assignment()
+                            .stream()
+                            .filter(partition -> partition.topic().equals(topic))
+                            .filter(partition -> partition.partition() == partitionId)
+                            .findFirst()
+                            .get();
+
+                    if (topicPartition == null) continue;
+
+                    consumer.commitSync(Collections.singletonMap(topicPartition, new OffsetAndMetadata(offset + 1)));
                 }
 
                 ConsumerRecords<String, String> records = consumer.poll(100);
@@ -78,11 +99,11 @@ public class ConsumerThread extends Thread {
                         long offset = record.offset();
                         String key = record.key();
                         String value = record.value();
+                        int partitionId = partition.partition();
 
-                        log.debug("Received from {} with offset {}: {} -> {}", topic, offset, key, value);
+                        log.debug("Received from {}-{} offset {}: {} -> {}", topic, partitionId, offset, key, value);
 
-                        inboundQueue.put(new InboundMessage(topic, offset, key, value));
-                        consumer.commitSync(Collections.singletonMap(partition, new OffsetAndMetadata(offset + 1)));
+                        inboundQueue.put(new InboundMessage(topic, partitionId, offset, key, value));
                     }
                 }
             }
@@ -112,6 +133,10 @@ public class ConsumerThread extends Thread {
         }
     }
 
+    public void commit(String topic, int partitionId, long offset) {
+        commitRequestQueue.add(new CommitRequest(topic, partitionId, offset));
+    }
+
     public void seek(String topic, String offset) {
         seekRequestQueue.add(new SeekRequest(topic, offset));
     }
@@ -128,7 +153,7 @@ public class ConsumerThread extends Thread {
         return new KafkaConsumer<>(props);
     }
 
-    private List<TopicPartition> getPartitionsForTopic(String topic, KafkaConsumer<?, ?> consumer) {
+    private List<TopicPartition> getPartitionsForTopic(String topic) {
         List<TopicPartition> partitions = consumer.assignment()
                 .stream()
                 .filter(partition -> partition.topic().equals(topic))

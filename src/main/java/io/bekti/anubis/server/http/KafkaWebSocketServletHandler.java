@@ -36,6 +36,9 @@ public class KafkaWebSocketServletHandler {
                 case "publish":
                     publish(session, body);
                     break;
+                case "commit":
+                    commit(session, body);
+                    break;
                 case "seek":
                     seek(session, body);
                     break;
@@ -105,6 +108,17 @@ public class KafkaWebSocketServletHandler {
             String key = body.has("key") ? body.getString("key") : null;
             String value = body.getString("value");
             client.enqueueOutboundMessage(new OutboundMessage(topic, key, value));
+        }
+    }
+
+    private void commit(Session session, JSONObject body) {
+        KafkaWebSocketClient client = WebSocketServer.getKafkaClients().get(session);
+
+        if (client != null) {
+            String topic = body.getString("topic");
+            int partition = body.getInt("partition");
+            long offset = body.getLong("offset");
+            client.commit(topic, partition, offset);
         }
     }
 

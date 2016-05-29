@@ -23,6 +23,7 @@ public class KafkaWebSocketClient extends Thread {
     private DispatcherThread dispatcherThread;
     private PublisherThread publisherThread;
     private ConsumerThread consumerThread;
+    private PingThread pingThread;
 
     public KafkaWebSocketClient(Session session) {
         this.session = session;
@@ -38,6 +39,9 @@ public class KafkaWebSocketClient extends Thread {
 
         publisherThread = new PublisherThread(outboundQueue);
         publisherThread.start();
+
+        pingThread = new PingThread(session, this);
+        pingThread.start();
 
         log.debug("Entering main client loop...");
     }
@@ -64,6 +68,11 @@ public class KafkaWebSocketClient extends Thread {
                 if (consumerThread != null && consumerThread.isRunning()) {
                     consumerThread.shutdown();
                     consumerThread.join();
+                }
+
+                if (pingThread.isRunning()) {
+                    pingThread.shutdown();
+                    pingThread.join();
                 }
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
@@ -101,6 +110,12 @@ public class KafkaWebSocketClient extends Thread {
             }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
+        }
+    }
+
+    public void commit(String topic, int partitionId, long offset) {
+        if (consumerThread != null && consumerThread.isRunning()) {
+            consumerThread.commit(topic, partitionId, offset);
         }
     }
 
