@@ -30,7 +30,7 @@ Send these JSONs over the WebSocket connection to perform the corresponding comm
 ### Subscribing
 ~~~javascript
 {
-  "action": "connect",
+  "action": "subscribe",
   "topics": ["fruits", "cities"],
   "groupId": "testgroup"
 }
@@ -55,10 +55,10 @@ After subscribing, you will get the messages automatically over the WebSocket co
 }
 ~~~
 
-### Disconnecting
+### Unsubscribing
 ~~~javascript
 {
-  "action": "disconnect"
+  "action": "unsubscribe"
 }
 ~~~
 

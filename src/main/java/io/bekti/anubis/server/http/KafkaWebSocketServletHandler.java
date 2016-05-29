@@ -30,17 +30,17 @@ public class KafkaWebSocketServletHandler {
             String action = body.getString("action");
 
             switch (action) {
-                case "connect":
-                    createKafkaClient(session, body);
+                case "subscribe":
+                    subscribe(session, body);
                     break;
                 case "publish":
-                    publishMessage(session, body);
+                    publish(session, body);
                     break;
                 case "seek":
-                    seekConsumer(session, body);
+                    seek(session, body);
                     break;
-                case "disconnect":
-                    closeKafkaClient(session);
+                case "unsubscribe":
+                    unsubscribe(session);
                     break;
             }
         } catch (Exception e) {
@@ -52,34 +52,52 @@ public class KafkaWebSocketServletHandler {
     @OnWebSocketConnect
     public void onConnect(Session session) throws IOException {
         log.info("{} connected!", session.getRemoteAddress().getHostString());
+
+        createClient(session);
     }
 
     @OnWebSocketClose
     public void onClose(Session session, int status, String reason) {
         log.info("{} closed!", session.getRemoteAddress().getHostString());
 
-        closeKafkaClient(session);
+        closeClient(session);
     }
 
-    private void createKafkaClient(Session session, JSONObject body) {
-        closeKafkaClient(session);
+    private void createClient(Session session) {
+        closeClient(session);
 
-        String groupId = body.getString("groupId");
-        JSONArray jsonTopicsArray = body.getJSONArray("topics");
-
-        List<String> topics = new ArrayList<>();
-
-        for (int i = 0; i < jsonTopicsArray.length(); ++i) {
-            topics.add(jsonTopicsArray.getString(i));
-        }
-
-        KafkaWebSocketClient client = new KafkaWebSocketClient(groupId, topics, session);
+        KafkaWebSocketClient client = new KafkaWebSocketClient(session);
         client.start();
 
         WebSocketServer.getKafkaClients().put(session, client);
     }
 
-    private void publishMessage(Session session, JSONObject body) {
+    private void subscribe(Session session, JSONObject body) {
+        KafkaWebSocketClient client = WebSocketServer.getKafkaClients().get(session);
+
+        if (client != null) {
+            String groupId = body.getString("groupId");
+            JSONArray jsonTopicsArray = body.getJSONArray("topics");
+
+            List<String> topics = new ArrayList<>();
+
+            for (int i = 0; i < jsonTopicsArray.length(); ++i) {
+                topics.add(jsonTopicsArray.getString(i));
+            }
+
+            client.subscribe(topics, groupId);
+        }
+    }
+
+    private void unsubscribe(Session session) {
+        KafkaWebSocketClient client = WebSocketServer.getKafkaClients().get(session);
+
+        if (client != null) {
+            client.unsubscribe();
+        }
+    }
+
+    private void publish(Session session, JSONObject body) {
         KafkaWebSocketClient client = WebSocketServer.getKafkaClients().get(session);
 
         if (client != null) {
@@ -90,17 +108,17 @@ public class KafkaWebSocketServletHandler {
         }
     }
 
-    private void seekConsumer(Session session, JSONObject body) {
+    private void seek(Session session, JSONObject body) {
         KafkaWebSocketClient client = WebSocketServer.getKafkaClients().get(session);
 
         if (client != null) {
             String topic = body.getString("topic");
             String offset = body.getString("offset");
-            client.requestSeek(topic, offset);
+            client.seek(topic, offset);
         }
     }
 
-    private void closeKafkaClient(Session session) {
+    private void closeClient(Session session) {
         KafkaWebSocketClient client = WebSocketServer.getKafkaClients().get(session);
 
         if (client != null) {
