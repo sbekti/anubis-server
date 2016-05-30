@@ -1,6 +1,6 @@
-package io.bekti.anubis.server.http;
+package io.bekti.anubis.server.ws;
 
-import io.bekti.anubis.server.kafka.KafkaWebSocketClient;
+import io.bekti.anubis.server.workers.MainWorkerThread;
 import io.bekti.anubis.server.utils.SharedConfiguration;
 import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.servlet.ServletContextHandler;
@@ -14,17 +14,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class WebSocketServer extends Thread {
+public class AnubisWebSocketServer extends Thread {
 
-    private static Logger log = LoggerFactory.getLogger(WebSocketServer.class);
+    private static Logger log = LoggerFactory.getLogger(AnubisWebSocketServer.class);
 
     private Server server;
     private AtomicBoolean running = new AtomicBoolean(false);
-    private static Map<Session, KafkaWebSocketClient> kafkaClients;
+    private static Map<Session, MainWorkerThread> workers = new HashMap<>();
 
-    public WebSocketServer() {
-        kafkaClients = new HashMap<>();
-    }
+    public AnubisWebSocketServer() {}
 
     @Override
     public void run() {
@@ -58,10 +56,10 @@ public class WebSocketServer extends Thread {
 
         if (running.get() && server != null && !server.isStopped()) {
             try {
-                for (Map.Entry<Session, KafkaWebSocketClient> entry : kafkaClients.entrySet()) {
-                    KafkaWebSocketClient client = entry.getValue();
-                    client.shutdown();
-                    client.join();
+                for (Map.Entry<Session, MainWorkerThread> pair : workers.entrySet()) {
+                    MainWorkerThread workerThread = pair.getValue();
+                    workerThread.shutdown();
+                    workerThread.join();
                 }
 
                 server.stop();
@@ -77,7 +75,7 @@ public class WebSocketServer extends Thread {
         ServletContextHandler context = new ServletContextHandler();
         context.setContextPath("/");
 
-        ServletHolder loginServletHolder = new ServletHolder("ws", KafkaWebSocketServlet.class);
+        ServletHolder loginServletHolder = new ServletHolder("ws", AnubisWebSocketServlet.class);
         context.addServlet(loginServletHolder, "/");
 
         server.setHandler(context);
@@ -103,8 +101,8 @@ public class WebSocketServer extends Thread {
         server.setConnectors(new Connector[] { connector, sslConnector });
     }
 
-    public static Map<Session, KafkaWebSocketClient> getKafkaClients() {
-        return kafkaClients;
+    public static Map<Session, MainWorkerThread> getWorkers() {
+        return workers;
     }
 
 }

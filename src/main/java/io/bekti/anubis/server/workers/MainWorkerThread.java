@@ -1,4 +1,4 @@
-package io.bekti.anubis.server.kafka;
+package io.bekti.anubis.server.workers;
 
 import io.bekti.anubis.server.types.InboundMessage;
 import io.bekti.anubis.server.types.OutboundMessage;
@@ -10,9 +10,9 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class KafkaWebSocketClient extends Thread {
+public class MainWorkerThread extends Thread {
 
-    private static Logger log = LoggerFactory.getLogger(KafkaWebSocketClient.class);
+    private static Logger log = LoggerFactory.getLogger(MainWorkerThread.class);
 
     private BlockingQueue<InboundMessage> inboundQueue = new LinkedBlockingQueue<>();
     private BlockingQueue<OutboundMessage> outboundQueue = new LinkedBlockingQueue<>();
@@ -25,7 +25,7 @@ public class KafkaWebSocketClient extends Thread {
     private ConsumerThread consumerThread;
     private PingThread pingThread;
 
-    public KafkaWebSocketClient(Session session) {
+    public MainWorkerThread(Session session) {
         this.session = session;
     }
 

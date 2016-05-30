@@ -1,9 +1,10 @@
-package io.bekti.anubis.server.kafka;
+package io.bekti.anubis.server.workers;
 
 import io.bekti.anubis.server.types.CommitRequest;
 import io.bekti.anubis.server.types.InboundMessage;
 import io.bekti.anubis.server.types.SeekRequest;
 import io.bekti.anubis.server.utils.SharedConfiguration;
+import io.bekti.anubis.server.utils.TopicInitializer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;

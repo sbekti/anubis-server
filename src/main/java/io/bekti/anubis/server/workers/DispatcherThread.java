@@ -1,4 +1,4 @@
-package io.bekti.anubis.server.kafka;
+package io.bekti.anubis.server.workers;
 
 import io.bekti.anubis.server.types.InboundMessage;
 import org.eclipse.jetty.websocket.api.Session;

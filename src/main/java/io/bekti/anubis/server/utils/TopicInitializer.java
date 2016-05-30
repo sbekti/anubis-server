@@ -1,7 +1,5 @@
-package io.bekti.anubis.server.kafka;
+package io.bekti.anubis.server.utils;
 
-import io.bekti.anubis.server.utils.KafkaUtils;
-import io.bekti.anubis.server.utils.SharedConfiguration;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.PartitionInfo;
 import org.slf4j.Logger;

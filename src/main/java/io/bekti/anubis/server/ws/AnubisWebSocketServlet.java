@@ -1,14 +1,14 @@
-package io.bekti.anubis.server.http;
+package io.bekti.anubis.server.ws;
 
 import org.eclipse.jetty.websocket.servlet.WebSocketServlet;
 import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 
-public class KafkaWebSocketServlet extends WebSocketServlet {
+public class AnubisWebSocketServlet extends WebSocketServlet {
 
     @Override
     public void configure(WebSocketServletFactory factory) {
         factory.getPolicy().setIdleTimeout(Long.MAX_VALUE);
-        factory.register(KafkaWebSocketServletHandler.class);
+        factory.register(AnubisWebSocketServletHandler.class);
     }
 
 }

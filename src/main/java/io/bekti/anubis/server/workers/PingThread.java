@@ -1,4 +1,4 @@
-package io.bekti.anubis.server.kafka;
+package io.bekti.anubis.server.workers;
 
 import org.eclipse.jetty.websocket.api.Session;
 import org.json.JSONObject;
@@ -14,9 +14,9 @@ public class PingThread extends Thread {
     private AtomicBoolean running = new AtomicBoolean(false);
 
     private Session session;
-    private KafkaWebSocketClient client;
+    private MainWorkerThread client;
 
-    public PingThread(Session session, KafkaWebSocketClient client) {
+    public PingThread(Session session, MainWorkerThread client) {
         this.session = session;
         this.client = client;
     }

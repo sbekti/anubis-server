@@ -1,6 +1,6 @@
-package io.bekti.anubis.server.http;
+package io.bekti.anubis.server.ws;
 
-import io.bekti.anubis.server.kafka.KafkaWebSocketClient;
+import io.bekti.anubis.server.workers.MainWorkerThread;
 import io.bekti.anubis.server.types.OutboundMessage;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
@@ -13,17 +13,16 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 @WebSocket
-public class KafkaWebSocketServletHandler {
+public class AnubisWebSocketServletHandler {
 
-    private Logger log = LoggerFactory.getLogger(KafkaWebSocketServletHandler.class);
+    private Logger log = LoggerFactory.getLogger(AnubisWebSocketServletHandler.class);
 
     @OnWebSocketMessage
-    public void onText(Session session, String message) throws IOException {
+    public void onText(Session session, String message) {
         log.info("Received message: {}", message);
 
         try {
@@ -54,32 +53,32 @@ public class KafkaWebSocketServletHandler {
     }
 
     @OnWebSocketConnect
-    public void onConnect(Session session) throws IOException {
+    public void onConnect(Session session) {
         log.info("{} connected!", session.getRemoteAddress().getHostString());
 
-        createClient(session);
+        createWorker(session);
     }
 
     @OnWebSocketClose
     public void onClose(Session session, int status, String reason) {
         log.info("{} closed!", session.getRemoteAddress().getHostString());
 
-        closeClient(session);
+        closeWorker(session);
     }
 
-    private void createClient(Session session) {
-        closeClient(session);
+    private void createWorker(Session session) {
+        closeWorker(session);
 
-        KafkaWebSocketClient client = new KafkaWebSocketClient(session);
-        client.start();
+        MainWorkerThread worker = new MainWorkerThread(session);
+        worker.start();
 
-        WebSocketServer.getKafkaClients().put(session, client);
+        AnubisWebSocketServer.getWorkers().put(session, worker);
     }
 
     private void subscribe(Session session, JSONObject body) {
-        KafkaWebSocketClient client = WebSocketServer.getKafkaClients().get(session);
+        MainWorkerThread worker = AnubisWebSocketServer.getWorkers().get(session);
 
-        if (client != null) {
+        if (worker != null) {
             String groupId = body.getString("groupId");
             JSONArray jsonTopicsArray = body.getJSONArray("topics");
 
@@ -89,44 +88,44 @@ public class KafkaWebSocketServletHandler {
                 topics.add(jsonTopicsArray.getString(i));
             }
 
-            client.subscribe(topics, groupId);
+            worker.subscribe(topics, groupId);
         }
     }
 
     private void unsubscribe(Session session) {
-        KafkaWebSocketClient client = WebSocketServer.getKafkaClients().get(session);
+        MainWorkerThread worker = AnubisWebSocketServer.getWorkers().get(session);
 
-        if (client != null) {
-            client.unsubscribe();
+        if (worker != null) {
+            worker.unsubscribe();
         }
     }
 
     private void publish(Session session, JSONObject body) {
-        KafkaWebSocketClient client = WebSocketServer.getKafkaClients().get(session);
+        MainWorkerThread worker = AnubisWebSocketServer.getWorkers().get(session);
 
-        if (client != null) {
+        if (worker != null) {
             String topic = body.getString("topic");
             String key = body.has("key") ? body.getString("key") : null;
             String value = body.getString("value");
-            client.enqueueOutboundMessage(new OutboundMessage(topic, key, value));
+            worker.enqueueOutboundMessage(new OutboundMessage(topic, key, value));
         }
     }
 
     private void commit(Session session, JSONObject body) {
-        KafkaWebSocketClient client = WebSocketServer.getKafkaClients().get(session);
+        MainWorkerThread worker = AnubisWebSocketServer.getWorkers().get(session);
 
-        if (client != null) {
+        if (worker != null) {
             String topic = body.getString("topic");
             int partition = body.getInt("partition");
             long offset = body.getLong("offset");
-            client.commit(topic, partition, offset);
+            worker.commit(topic, partition, offset);
         }
     }
 
     private void seek(Session session, JSONObject body) {
-        KafkaWebSocketClient client = WebSocketServer.getKafkaClients().get(session);
+        MainWorkerThread worker = AnubisWebSocketServer.getWorkers().get(session);
 
-        if (client != null) {
+        if (worker != null) {
             String topic = body.getString("topic");
 
             String offset;
@@ -137,18 +136,18 @@ public class KafkaWebSocketServletHandler {
                 offset = String.valueOf(body.getLong("offset"));
             }
 
-            client.seek(topic, offset);
+            worker.seek(topic, offset);
         }
     }
 
-    private void closeClient(Session session) {
-        KafkaWebSocketClient client = WebSocketServer.getKafkaClients().get(session);
+    private void closeWorker(Session session) {
+        MainWorkerThread worker = AnubisWebSocketServer.getWorkers().get(session);
 
-        if (client != null) {
-            client.shutdown();
+        if (worker != null) {
+            worker.shutdown();
 
             try {
-                client.join();
+                worker.join();
             } catch (InterruptedException e) {
                 log.error(e.getMessage(), e);
             }

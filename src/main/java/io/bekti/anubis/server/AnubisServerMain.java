@@ -1,6 +1,6 @@
 package io.bekti.anubis.server;
 
-import io.bekti.anubis.server.http.WebSocketServer;
+import io.bekti.anubis.server.ws.AnubisWebSocketServer;
 import io.bekti.anubis.server.utils.SharedConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,15 +13,15 @@ public class AnubisServerMain {
         Thread mainThread = Thread.currentThread();
         SharedConfiguration.loadFromFile(System.getProperty("config"));
 
-        WebSocketServer webSocketServer = new WebSocketServer();
-        webSocketServer.start();
+        AnubisWebSocketServer server = new AnubisWebSocketServer();
+        server.start();
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             log.debug("Shutting down...");
 
             try {
-                webSocketServer.shutdown();
-                webSocketServer.join();
+                server.shutdown();
+                server.join();
                 mainThread.join();
             } catch (InterruptedException e) {
                 log.error(e.getMessage(), e);

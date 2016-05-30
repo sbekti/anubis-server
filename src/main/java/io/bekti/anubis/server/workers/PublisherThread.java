@@ -1,10 +1,10 @@
-package io.bekti.anubis.server.kafka;
+package io.bekti.anubis.server.workers;
 
 import io.bekti.anubis.server.types.OutboundMessage;
 import io.bekti.anubis.server.utils.SharedConfiguration;
+import io.bekti.anubis.server.utils.TopicInitializer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.eclipse.jetty.websocket.api.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +19,6 @@ public class PublisherThread extends Thread {
     private AtomicBoolean running = new AtomicBoolean(false);
 
     private BlockingQueue<OutboundMessage> outboundQueue;
-
     private KafkaProducer<String, String> producer;
 
     public PublisherThread(BlockingQueue<OutboundMessage> outboundQueue) {
@@ -33,10 +32,8 @@ public class PublisherThread extends Thread {
         producer = getProducer();
 
         while (running.get()) {
-            OutboundMessage outboundMessage;
-
             try {
-                outboundMessage = outboundQueue.poll(100, TimeUnit.MILLISECONDS);
+                OutboundMessage outboundMessage = outboundQueue.poll(100, TimeUnit.MILLISECONDS);
 
                 if (outboundMessage == null) continue;
 
