@@ -2,6 +2,7 @@ package io.bekti.anubis.server.workers;
 
 import io.bekti.anubis.server.utils.SharedConfiguration;
 import org.eclipse.jetty.websocket.api.Session;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +30,8 @@ public class PingThread extends Thread {
         while (running.get()) {
             try {
                 if (session.isOpen()) {
-                    session.getRemote().sendPing(ByteBuffer.wrap("PING".getBytes()));
+                    ByteBuffer pingPayload = generatePingPayload();
+                    session.getRemote().sendPing(pingPayload);
                 } else {
                     client.shutdown();
                 }
@@ -43,6 +45,14 @@ public class PingThread extends Thread {
                 client.shutdown();
             }
         }
+    }
+
+    private ByteBuffer generatePingPayload() {
+        JSONObject pingPayload = new JSONObject();
+        pingPayload.put("watchDogTimeout", SharedConfiguration.getLong("watchdog.timeout.ms"));
+        ByteBuffer payload = ByteBuffer.wrap(pingPayload.toString().getBytes());
+
+        return payload;
     }
 
     public boolean isRunning() {
