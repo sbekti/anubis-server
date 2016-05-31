@@ -1,11 +1,12 @@
 package io.bekti.anubis.server.workers;
 
+import io.bekti.anubis.server.utils.SharedConfiguration;
 import org.eclipse.jetty.websocket.api.Session;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class PingThread extends Thread {
@@ -25,18 +26,16 @@ public class PingThread extends Thread {
     public void run() {
         running.set(true);
 
-        JSONObject payload = new JSONObject();
-        payload.put("event", "ping");
-
         while (running.get()) {
             try {
                 if (session.isOpen()) {
-                    session.getRemote().sendString(payload.toString());
+                    session.getRemote().sendPing(ByteBuffer.wrap("PING".getBytes()));
                 } else {
                     client.shutdown();
                 }
 
-                Thread.sleep(25000);
+                long pingInterval = SharedConfiguration.getLong("ping.interval.ms");
+                Thread.sleep(pingInterval);
             } catch (IOException ioe) {
                 client.shutdown();
             } catch (InterruptedException ignored) {

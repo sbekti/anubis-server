@@ -1,12 +1,12 @@
 package io.bekti.anubis.server.ws;
 
+import io.bekti.anubis.server.utils.SharedConfiguration;
 import io.bekti.anubis.server.workers.MainWorkerThread;
 import io.bekti.anubis.server.types.OutboundMessage;
+import io.bekti.anubis.server.workers.WatchDogTimer;
 import org.eclipse.jetty.websocket.api.Session;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
-import org.eclipse.jetty.websocket.api.annotations.WebSocket;
+import org.eclipse.jetty.websocket.api.annotations.*;
+import org.eclipse.jetty.websocket.api.extensions.Frame;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -15,11 +15,19 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 @WebSocket
 public class AnubisWebSocketServletHandler {
 
     private Logger log = LoggerFactory.getLogger(AnubisWebSocketServletHandler.class);
+
+    private ScheduledThreadPoolExecutor watchDogTimer = new ScheduledThreadPoolExecutor(1);
+    private AtomicLong lastPongTimestamp = new AtomicLong();
+
+    public AnubisWebSocketServletHandler() {}
 
     @OnWebSocketMessage
     public void onText(Session session, String message) {
@@ -57,6 +65,7 @@ public class AnubisWebSocketServletHandler {
         log.info("{} connected!", session.getRemoteAddress().getHostString());
 
         createWorker(session);
+        createWatchDogTimer(session);
     }
 
     @OnWebSocketClose
@@ -64,6 +73,15 @@ public class AnubisWebSocketServletHandler {
         log.info("{} closed!", session.getRemoteAddress().getHostString());
 
         closeWorker(session);
+        destroyWatchDogTimer();
+    }
+
+    @OnWebSocketFrame
+    public void onFrame(Session session, Frame frame) {
+        if (frame.getType() == Frame.Type.PONG) {
+            log.info("Got PONG!");
+            lastPongTimestamp.set(System.currentTimeMillis());
+        }
     }
 
     private void createWorker(Session session) {
@@ -152,6 +170,23 @@ public class AnubisWebSocketServletHandler {
                 log.error(e.getMessage(), e);
             }
         }
+    }
+
+    private void createWatchDogTimer(Session session) {
+        long pingTimeout = SharedConfiguration.getLong("ping.timeout.ms");
+
+        lastPongTimestamp.set(System.currentTimeMillis());
+
+        watchDogTimer.scheduleAtFixedRate(
+                new WatchDogTimer(session, lastPongTimestamp, pingTimeout),
+                pingTimeout,
+                pingTimeout,
+                TimeUnit.MILLISECONDS
+        );
+    }
+
+    private void destroyWatchDogTimer() {
+        watchDogTimer.shutdown();
     }
 
 }
