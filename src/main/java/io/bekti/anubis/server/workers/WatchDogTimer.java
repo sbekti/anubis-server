@@ -27,7 +27,12 @@ public class WatchDogTimer implements Runnable {
 
         if (currentTimestamp - lastPongTimestamp.get() > pingTimeout) {
             log.info("WOOF!");
-            session.close();
+
+            try {
+                session.disconnect();
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
+            }
         }
     }
 

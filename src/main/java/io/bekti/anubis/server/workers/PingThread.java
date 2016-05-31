@@ -36,12 +36,11 @@ public class PingThread extends Thread {
 
                 long pingInterval = SharedConfiguration.getLong("ping.interval.ms");
                 Thread.sleep(pingInterval);
-            } catch (IOException ioe) {
-                client.shutdown();
             } catch (InterruptedException ignored) {
 
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
+                client.shutdown();
             }
         }
     }

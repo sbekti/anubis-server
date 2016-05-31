@@ -29,6 +29,14 @@ public class AnubisWebSocketServletHandler {
 
     public AnubisWebSocketServletHandler() {}
 
+    @OnWebSocketConnect
+    public void onConnect(Session session) {
+        log.info("{} connected!", session.getRemoteAddress().getHostString());
+
+        createWorker(session);
+        createWatchDogTimer(session);
+    }
+
     @OnWebSocketMessage
     public void onText(Session session, String message) {
         log.info("Received message: {}", message);
@@ -58,14 +66,6 @@ public class AnubisWebSocketServletHandler {
             log.error(e.getMessage(), e);
         }
 
-    }
-
-    @OnWebSocketConnect
-    public void onConnect(Session session) {
-        log.info("{} connected!", session.getRemoteAddress().getHostString());
-
-        createWorker(session);
-        createWatchDogTimer(session);
     }
 
     @OnWebSocketClose
@@ -173,14 +173,14 @@ public class AnubisWebSocketServletHandler {
     }
 
     private void createWatchDogTimer(Session session) {
-        long pingTimeout = SharedConfiguration.getLong("ping.timeout.ms");
+        long watchDogTimeout = SharedConfiguration.getLong("watchdog.timeout.ms");
 
         lastPongTimestamp.set(System.currentTimeMillis());
 
         watchDogTimer.scheduleAtFixedRate(
-                new WatchDogTimer(session, lastPongTimestamp, pingTimeout),
-                pingTimeout,
-                pingTimeout,
+                new WatchDogTimer(session, lastPongTimestamp, watchDogTimeout),
+                watchDogTimeout,
+                watchDogTimeout,
                 TimeUnit.MILLISECONDS
         );
     }
