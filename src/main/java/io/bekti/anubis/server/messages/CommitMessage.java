@@ -1,15 +1,15 @@
-package io.bekti.anubis.server.types;
+package io.bekti.anubis.server.messages;
 
-public class CommitRequest {
+import io.bekti.anubis.server.types.Event;
+
+public class CommitMessage extends BaseMessage {
 
     private String topic;
     private int partition;
     private long offset;
 
-    public CommitRequest(String topic, int partition, Long offset) {
-        this.topic = topic;
-        this.partition = partition;
-        this.offset = offset;
+    public CommitMessage() {
+        this.event = Event.COMMIT;
     }
 
     public String getTopic() {

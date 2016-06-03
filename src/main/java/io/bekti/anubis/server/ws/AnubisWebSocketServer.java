@@ -9,7 +9,6 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.websocket.api.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -17,9 +16,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class AnubisWebSocketServer extends Thread {
 
     private static Logger log = LoggerFactory.getLogger(AnubisWebSocketServer.class);
+    private AtomicBoolean running = new AtomicBoolean(false);
 
     private Server server;
-    private AtomicBoolean running = new AtomicBoolean(false);
     private static Map<Session, MainWorkerThread> workers = new HashMap<>();
 
     public AnubisWebSocketServer() {}

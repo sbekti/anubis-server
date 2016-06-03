@@ -3,12 +3,12 @@ package io.bekti.anubis.server.workers;
 import org.eclipse.jetty.websocket.api.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.concurrent.atomic.AtomicLong;
 
 public class WatchDogTimer implements Runnable {
 
     private Logger log = LoggerFactory.getLogger(WatchDogTimer.class);
+
     private Session session;
     private AtomicLong lastPongTimestamp;
     private long pingTimeout;
@@ -21,12 +21,12 @@ public class WatchDogTimer implements Runnable {
 
     @Override
     public void run() {
-        log.info("WOOF?");
+        log.debug("WOOF {}?", session.getRemoteAddress().getHostString());
 
         long currentTimestamp = System.currentTimeMillis();
 
         if (currentTimestamp - lastPongTimestamp.get() > pingTimeout) {
-            log.info("WOOF!");
+            log.debug("WOOF {}!", session.getRemoteAddress().getHostString());
 
             try {
                 session.disconnect();

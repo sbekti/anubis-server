@@ -1,19 +1,16 @@
 package io.bekti.anubis.server.workers;
 
-import io.bekti.anubis.server.types.CommitRequest;
-import io.bekti.anubis.server.types.InboundMessage;
-import io.bekti.anubis.server.types.SeekRequest;
+import io.bekti.anubis.server.messages.BaseMessage;
+import io.bekti.anubis.server.messages.CommitMessage;
+import io.bekti.anubis.server.messages.ConsumerMessage;
+import io.bekti.anubis.server.messages.SeekMessage;
 import io.bekti.anubis.server.utils.SharedConfiguration;
 import io.bekti.anubis.server.utils.TopicInitializer;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -24,16 +21,16 @@ public class ConsumerThread extends Thread {
     private static Logger log = LoggerFactory.getLogger(ConsumerThread.class);
     private AtomicBoolean running = new AtomicBoolean(false);
 
-    private BlockingQueue<InboundMessage> inboundQueue;
+    private BlockingQueue<BaseMessage> consumerQueue;
     private List<String> topics;
     private String groupId;
 
     private KafkaConsumer<String, String> consumer;
-    private Queue<SeekRequest> seekRequestQueue = new LinkedList<>();
-    private Queue<CommitRequest> commitRequestQueue = new LinkedList<>();
+    private Queue<SeekMessage> seekRequestQueue = new LinkedList<>();
+    private Queue<CommitMessage> commitRequestQueue = new LinkedList<>();
 
-    public ConsumerThread(List<String> topics, String groupId, BlockingQueue<InboundMessage> inboundQueue) {
-        this.inboundQueue = inboundQueue;
+    public ConsumerThread(List<String> topics, String groupId, BlockingQueue<BaseMessage> consumerQueue) {
+        this.consumerQueue = consumerQueue;
         this.topics = topics;
         this.groupId = groupId;
     }
@@ -42,53 +39,31 @@ public class ConsumerThread extends Thread {
     public void run() {
         running.set(true);
 
-        consumer = getConsumer(groupId);
-
         topics.forEach(TopicInitializer::initializeTopic);
 
-        consumer.subscribe(topics);
+        consumer = getConsumer(groupId);
+
+        consumer.subscribe(topics, new ConsumerRebalanceListener() {
+
+            @Override
+            public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
+                for (TopicPartition partition : partitions) {
+
+                }
+            }
+
+            @Override
+            public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
+
+            }
+
+        });
 
         try {
             while (true) {
-                while (!seekRequestQueue.isEmpty()) {
-                    SeekRequest seekRequest = seekRequestQueue.remove();
+                processSeekRequests();
 
-                    switch (seekRequest.getOffset()) {
-                        case "beginning":
-                            consumer.seekToBeginning(getPartitionsForTopic(seekRequest.getTopic()));
-                            break;
-                        case "end":
-                            consumer.seekToEnd(getPartitionsForTopic(seekRequest.getTopic()));
-                            break;
-                        default:
-                            consumer.assignment()
-                                    .stream()
-                                    .filter(partition -> partition.topic().equals(seekRequest.getTopic()))
-                                    .forEach(partition ->
-                                            consumer.seek(partition, Long.parseLong(seekRequest.getOffset()))
-                                    );
-                            break;
-                    }
-                }
-
-                while (!commitRequestQueue.isEmpty()) {
-                    CommitRequest commitRequest = commitRequestQueue.remove();
-
-                    String topic = commitRequest.getTopic();
-                    int partitionId = commitRequest.getPartition();
-                    long offset = commitRequest.getOffset();
-
-                    TopicPartition topicPartition = consumer.assignment()
-                            .stream()
-                            .filter(partition -> partition.topic().equals(topic))
-                            .filter(partition -> partition.partition() == partitionId)
-                            .findFirst()
-                            .get();
-
-                    if (topicPartition == null) continue;
-
-                    consumer.commitSync(Collections.singletonMap(topicPartition, new OffsetAndMetadata(offset + 1)));
-                }
+                processCommitRequests();
 
                 ConsumerRecords<String, String> records = consumer.poll(100);
 
@@ -104,7 +79,14 @@ public class ConsumerThread extends Thread {
 
                         log.debug("Received from {}-{} offset {}: {} -> {}", topic, partitionId, offset, key, value);
 
-                        inboundQueue.put(new InboundMessage(topic, partitionId, offset, key, value));
+                        ConsumerMessage consumerMessage = new ConsumerMessage();
+                        consumerMessage.setTopic(topic);
+                        consumerMessage.setPartition(partitionId);
+                        consumerMessage.setOffset(offset);
+                        consumerMessage.setKey(key);
+                        consumerMessage.setValue(value);
+
+                        consumerQueue.put(consumerMessage);
                     }
                 }
             }
@@ -134,12 +116,12 @@ public class ConsumerThread extends Thread {
         }
     }
 
-    public void commit(String topic, int partitionId, long offset) {
-        commitRequestQueue.add(new CommitRequest(topic, partitionId, offset));
+    public void commit(CommitMessage commitMessage) {
+        commitRequestQueue.add(commitMessage);
     }
 
-    public void seek(String topic, String offset) {
-        seekRequestQueue.add(new SeekRequest(topic, offset));
+    public void seek(SeekMessage seekMessage) {
+        seekRequestQueue.add(seekMessage);
     }
 
     private KafkaConsumer<String, String> getConsumer(String groupId) {
@@ -161,6 +143,50 @@ public class ConsumerThread extends Thread {
                 .collect(Collectors.toList());
 
         return partitions;
+    }
+
+    private void processSeekRequests() {
+        while (!seekRequestQueue.isEmpty()) {
+            SeekMessage seekMessage = seekRequestQueue.remove();
+
+            switch (seekMessage.getOffset()) {
+                case "beginning":
+                    consumer.seekToBeginning(getPartitionsForTopic(seekMessage.getTopic()));
+                    break;
+                case "end":
+                    consumer.seekToEnd(getPartitionsForTopic(seekMessage.getTopic()));
+                    break;
+                default:
+                    consumer.assignment()
+                            .stream()
+                            .filter(partition -> partition.topic().equals(seekMessage.getTopic()))
+                            .forEach(partition ->
+                                    consumer.seek(partition, Long.parseLong(seekMessage.getOffset()))
+                            );
+                    break;
+            }
+        }
+    }
+
+    private void processCommitRequests() {
+        while (!commitRequestQueue.isEmpty()) {
+            CommitMessage commitMessage = commitRequestQueue.remove();
+
+            String topic = commitMessage.getTopic();
+            int partitionId = commitMessage.getPartition();
+            long offset = commitMessage.getOffset();
+
+            TopicPartition topicPartition = consumer.assignment()
+                    .stream()
+                    .filter(partition -> partition.topic().equals(topic))
+                    .filter(partition -> partition.partition() == partitionId)
+                    .findFirst()
+                    .get();
+
+            if (topicPartition == null) continue;
+
+            consumer.commitSync(Collections.singletonMap(topicPartition, new OffsetAndMetadata(offset + 1)));
+        }
     }
 
 }

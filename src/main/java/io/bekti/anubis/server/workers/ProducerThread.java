@@ -1,28 +1,27 @@
 package io.bekti.anubis.server.workers;
 
-import io.bekti.anubis.server.types.OutboundMessage;
+import io.bekti.anubis.server.messages.ProducerMessage;
 import io.bekti.anubis.server.utils.SharedConfiguration;
 import io.bekti.anubis.server.utils.TopicInitializer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class PublisherThread extends Thread {
+public class ProducerThread extends Thread {
 
-    private static Logger log = LoggerFactory.getLogger(PublisherThread.class);
+    private static Logger log = LoggerFactory.getLogger(ProducerThread.class);
     private AtomicBoolean running = new AtomicBoolean(false);
 
-    private BlockingQueue<OutboundMessage> outboundQueue;
+    private BlockingQueue<ProducerMessage> producerQueue;
     private KafkaProducer<String, String> producer;
 
-    public PublisherThread(BlockingQueue<OutboundMessage> outboundQueue) {
-        this.outboundQueue = outboundQueue;
+    public ProducerThread(BlockingQueue<ProducerMessage> producerQueue) {
+        this.producerQueue = producerQueue;
     }
 
     @Override
@@ -33,13 +32,13 @@ public class PublisherThread extends Thread {
 
         while (running.get()) {
             try {
-                OutboundMessage outboundMessage = outboundQueue.poll(100, TimeUnit.MILLISECONDS);
+                ProducerMessage producerMessage = producerQueue.poll(100, TimeUnit.MILLISECONDS);
 
-                if (outboundMessage == null) continue;
+                if (producerMessage == null) continue;
 
-                String topic = outboundMessage.getTopic();
-                String value = outboundMessage.getValue();
-                String key = outboundMessage.getKey();
+                String topic = producerMessage.getTopic();
+                String key = producerMessage.getKey();
+                String value = producerMessage.getValue();
 
                 TopicInitializer.initializeTopic(topic);
 

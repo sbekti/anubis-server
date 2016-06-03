@@ -1,8 +1,9 @@
-package io.bekti.anubis.server.types;
+package io.bekti.anubis.server.messages;
 
+import io.bekti.anubis.server.types.Event;
 import org.apache.kafka.common.TopicPartition;
 
-public class InboundMessage {
+public class ConsumerMessage extends BaseMessage {
 
     private String topic;
     private int partition;
@@ -11,12 +12,8 @@ public class InboundMessage {
     private String value;
     private TopicPartition topicPartition;
 
-    public InboundMessage(String topic, int partition, long offset, String key, String value) {
-        this.topic = topic;
-        this.partition = partition;
-        this.offset = offset;
-        this.key = key;
-        this.value = value;
+    public ConsumerMessage() {
+        this.event = Event.MESSAGE;
     }
 
     public String getTopic() {
@@ -68,3 +65,4 @@ public class InboundMessage {
     }
 
 }
+

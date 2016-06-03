@@ -1,11 +1,9 @@
 package io.bekti.anubis.server.workers;
 
-import io.bekti.anubis.server.types.InboundMessage;
-import io.bekti.anubis.server.types.OutboundMessage;
+import io.bekti.anubis.server.messages.*;
 import org.eclipse.jetty.websocket.api.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -13,17 +11,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class MainWorkerThread extends Thread {
 
     private static Logger log = LoggerFactory.getLogger(MainWorkerThread.class);
-
-    private BlockingQueue<InboundMessage> inboundQueue = new LinkedBlockingQueue<>();
-    private BlockingQueue<OutboundMessage> outboundQueue = new LinkedBlockingQueue<>();
-
-    private Session session;
     private AtomicBoolean running = new AtomicBoolean(false);
 
+    private Session session;
     private DispatcherThread dispatcherThread;
-    private PublisherThread publisherThread;
+    private ProducerThread producerThread;
     private ConsumerThread consumerThread;
     private PingThread pingThread;
+
+    private BlockingQueue<BaseMessage> consumerQueue = new LinkedBlockingQueue<>();
+    private BlockingQueue<ProducerMessage> producerQueue = new LinkedBlockingQueue<>();
 
     public MainWorkerThread(Session session) {
         this.session = session;
@@ -34,11 +31,11 @@ public class MainWorkerThread extends Thread {
         log.info("Starting threads...");
         running.set(true);
 
-        dispatcherThread = new DispatcherThread(inboundQueue, session);
+        dispatcherThread = new DispatcherThread(consumerQueue, session);
         dispatcherThread.start();
 
-        publisherThread = new PublisherThread(outboundQueue);
-        publisherThread.start();
+        producerThread = new ProducerThread(producerQueue);
+        producerThread.start();
 
         pingThread = new PingThread(session, this);
         pingThread.start();
@@ -60,9 +57,9 @@ public class MainWorkerThread extends Thread {
                     dispatcherThread.join();
                 }
 
-                if (publisherThread.isRunning()) {
-                    publisherThread.shutdown();
-                    publisherThread.join();
+                if (producerThread.isRunning()) {
+                    producerThread.shutdown();
+                    producerThread.join();
                 }
 
                 if (consumerThread != null && consumerThread.isRunning()) {
@@ -82,9 +79,9 @@ public class MainWorkerThread extends Thread {
         }
     }
 
-    public void enqueueOutboundMessage(OutboundMessage outboundMessage) {
+    public void publish(ProducerMessage producerMessage) {
         try {
-            outboundQueue.put(outboundMessage);
+            producerQueue.put(producerMessage);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }
@@ -97,7 +94,7 @@ public class MainWorkerThread extends Thread {
                 consumerThread.join();
             }
 
-            consumerThread = new ConsumerThread(topics, groupId, inboundQueue);
+            consumerThread = new ConsumerThread(topics, groupId, consumerQueue);
             consumerThread.start();
         } catch (Exception e) {
             log.error(e.getMessage(), e);
@@ -115,15 +112,15 @@ public class MainWorkerThread extends Thread {
         }
     }
 
-    public void commit(String topic, int partitionId, long offset) {
+    public void commit(CommitMessage commitMessage) {
         if (consumerThread != null && consumerThread.isRunning()) {
-            consumerThread.commit(topic, partitionId, offset);
+            consumerThread.commit(commitMessage);
         }
     }
 
-    public void seek(String topic, String offset) {
+    public void seek(SeekMessage seekMessage) {
         if (consumerThread != null && consumerThread.isRunning()) {
-            consumerThread.seek(topic, offset);
+            consumerThread.seek(seekMessage);
         }
     }
 

@@ -1,12 +1,10 @@
 package io.bekti.anubis.server.workers;
 
+import io.bekti.anubis.server.messages.PingMessage;
 import io.bekti.anubis.server.utils.SharedConfiguration;
 import org.eclipse.jetty.websocket.api.Session;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -27,6 +25,8 @@ public class PingThread extends Thread {
     public void run() {
         running.set(true);
 
+        long pingInterval = SharedConfiguration.getLong("ping.interval.ms");
+
         while (running.get()) {
             try {
                 if (session.isOpen()) {
@@ -36,7 +36,6 @@ public class PingThread extends Thread {
                     client.shutdown();
                 }
 
-                long pingInterval = SharedConfiguration.getLong("ping.interval.ms");
                 Thread.sleep(pingInterval);
             } catch (InterruptedException ignored) {
 
@@ -48,10 +47,10 @@ public class PingThread extends Thread {
     }
 
     private ByteBuffer generatePingPayload() {
-        JSONObject pingPayload = new JSONObject();
-        pingPayload.put("watchDogTimeout", SharedConfiguration.getLong("watchdog.timeout.ms"));
-        ByteBuffer payload = ByteBuffer.wrap(pingPayload.toString().getBytes());
+        PingMessage pingMessage = new PingMessage();
+        pingMessage.setWatchDogTimeout(SharedConfiguration.getLong("watchdog.timeout.ms"));
 
+        ByteBuffer payload = ByteBuffer.wrap(pingMessage.toJson().getBytes());
         return payload;
     }
 

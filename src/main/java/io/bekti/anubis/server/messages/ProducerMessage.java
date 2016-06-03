@@ -1,15 +1,15 @@
-package io.bekti.anubis.server.types;
+package io.bekti.anubis.server.messages;
 
-public class OutboundMessage {
+import io.bekti.anubis.server.types.Event;
+
+public class ProducerMessage extends BaseMessage {
 
     private String topic;
     private String key;
     private String value;
 
-    public OutboundMessage(String topic, String key, String value) {
-        this.topic = topic;
-        this.key = key;
-        this.value = value;
+    public ProducerMessage() {
+        this.event = Event.PUBLISH;
     }
 
     public String getTopic() {

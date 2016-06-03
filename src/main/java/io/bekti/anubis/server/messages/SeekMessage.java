@@ -1,13 +1,14 @@
-package io.bekti.anubis.server.types;
+package io.bekti.anubis.server.messages;
 
-public class SeekRequest {
+import io.bekti.anubis.server.types.Event;
+
+public class SeekMessage extends BaseMessage {
 
     private String topic;
     private String offset;
 
-    public SeekRequest(String topic, String offset) {
-        this.topic = topic;
-        this.offset = offset;
+    public SeekMessage() {
+        this.event = Event.SEEK;
     }
 
     public String getTopic() {

@@ -1,11 +1,9 @@
 package io.bekti.anubis.server.workers;
 
-import io.bekti.anubis.server.types.InboundMessage;
+import io.bekti.anubis.server.messages.BaseMessage;
 import org.eclipse.jetty.websocket.api.Session;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -15,11 +13,11 @@ public class DispatcherThread extends Thread {
     private static Logger log = LoggerFactory.getLogger(DispatcherThread.class);
     private AtomicBoolean running = new AtomicBoolean(false);
 
-    private BlockingQueue<InboundMessage> inboundQueue;
+    private BlockingQueue<BaseMessage> consumerQueue;
     private Session session;
 
-    public DispatcherThread(BlockingQueue<InboundMessage> inboundQueue, Session session) {
-        this.inboundQueue = inboundQueue;
+    public DispatcherThread(BlockingQueue<BaseMessage> consumerQueue, Session session) {
+        this.consumerQueue = consumerQueue;
         this.session = session;
     }
 
@@ -28,23 +26,15 @@ public class DispatcherThread extends Thread {
         running.set(true);
 
         while (running.get()) {
-            InboundMessage inboundMessage;
+            BaseMessage baseMessage;
 
             try {
-                inboundMessage = inboundQueue.poll(100, TimeUnit.MILLISECONDS);
+                baseMessage = consumerQueue.poll(100, TimeUnit.MILLISECONDS);
 
-                if (inboundMessage == null) continue;
+                if (baseMessage == null) continue;
 
                 if (session.isOpen()) {
-                    JSONObject payload = new JSONObject();
-                    payload.put("event", "message");
-                    payload.put("topic", inboundMessage.getTopic());
-                    payload.put("partition", inboundMessage.getPartition());
-                    payload.put("offset", inboundMessage.getOffset());
-                    payload.put("key", inboundMessage.getKey());
-                    payload.put("value", inboundMessage.getValue());
-
-                    session.getRemote().sendString(payload.toString());
+                    session.getRemote().sendString(baseMessage.toJson());
                 }
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
