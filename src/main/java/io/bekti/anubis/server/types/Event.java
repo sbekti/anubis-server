@@ -4,6 +4,9 @@ import com.google.gson.annotations.SerializedName;
 
 public enum Event {
 
+    @SerializedName("assign")
+    ASSIGN,
+
     @SerializedName("commit")
     COMMIT,
 
@@ -16,13 +19,13 @@ public enum Event {
     @SerializedName("publish")
     PUBLISH,
 
-    @SerializedName("rebalance")
-    REBALANCE,
+    @SerializedName("revoke")
+    REVOKE,
 
     @SerializedName("seek")
     SEEK,
 
     @SerializedName("subscribe")
-    SUBSCRIBE,
+    SUBSCRIBE
 
 }

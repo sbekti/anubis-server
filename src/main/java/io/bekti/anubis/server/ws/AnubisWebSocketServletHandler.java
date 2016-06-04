@@ -41,9 +41,8 @@ public class AnubisWebSocketServletHandler {
         log.debug("Received message from {}: {}", session.getRemoteAddress().getHostString(), message);
 
         try {
-            Gson gson = new Gson();
-            JsonObject body = gson.fromJson(message, JsonObject.class);
-            String event = body.get("event").getAsString();
+            JsonObject payload = new Gson().fromJson(message, JsonObject.class);
+            String event = payload.get("event").getAsString();
 
             switch (event) {
                 case "subscribe":
@@ -74,7 +73,7 @@ public class AnubisWebSocketServletHandler {
 
     @OnWebSocketClose
     public void onClose(Session session, int status, String reason) {
-        log.info("{} closed", session.getRemoteAddress().getHostString());
+        log.info("{} closed: {} ({})", session.getRemoteAddress().getHostString(), reason, status);
 
         closeWorker(session);
         destroyWatchDogTimer();

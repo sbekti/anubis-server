@@ -1,9 +1,7 @@
 package io.bekti.anubis.server.workers;
 
-import io.bekti.anubis.server.messages.BaseMessage;
-import io.bekti.anubis.server.messages.CommitMessage;
-import io.bekti.anubis.server.messages.ConsumerMessage;
-import io.bekti.anubis.server.messages.SeekMessage;
+import io.bekti.anubis.server.messages.*;
+import io.bekti.anubis.server.models.KafkaPartition;
 import io.bekti.anubis.server.utils.SharedConfiguration;
 import io.bekti.anubis.server.utils.TopicInitializer;
 import org.apache.kafka.clients.consumer.*;
@@ -47,14 +45,30 @@ public class ConsumerThread extends Thread {
 
             @Override
             public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
-                for (TopicPartition partition : partitions) {
+                List<KafkaPartition> revokedPartitions = new LinkedList<>();
 
+                for (TopicPartition partition : partitions) {
+                    revokedPartitions.add(new KafkaPartition(partition.topic(), partition.partition()));
                 }
+
+                RevokeMessage revokeMessage = new RevokeMessage();
+                revokeMessage.setPartitions(revokedPartitions);
+
+                consumerQueue.add(revokeMessage);
             }
 
             @Override
             public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
+                List<KafkaPartition> assignedPartitions = new LinkedList<>();
 
+                for (TopicPartition partition : partitions) {
+                    assignedPartitions.add(new KafkaPartition(partition.topic(), partition.partition()));
+                }
+
+                AssignMessage assignMessage = new AssignMessage();
+                assignMessage.setPartitions(assignedPartitions);
+
+                consumerQueue.add(assignMessage);
             }
 
         });

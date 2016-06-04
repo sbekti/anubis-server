@@ -1,7 +1,6 @@
 package io.bekti.anubis.server.messages;
 
 import io.bekti.anubis.server.types.Event;
-import org.apache.kafka.common.TopicPartition;
 
 public class ConsumerMessage extends BaseMessage {
 
@@ -10,7 +9,6 @@ public class ConsumerMessage extends BaseMessage {
     private long offset;
     private String key;
     private String value;
-    private TopicPartition topicPartition;
 
     public ConsumerMessage() {
         this.event = Event.MESSAGE;
@@ -30,14 +28,6 @@ public class ConsumerMessage extends BaseMessage {
 
     public void setPartition(int partition) {
         this.partition = partition;
-    }
-
-    public TopicPartition getTopicPartition() {
-        return topicPartition;
-    }
-
-    public void setTopicPartition(TopicPartition topicPartition) {
-        this.topicPartition = topicPartition;
     }
 
     public long getOffset() {
