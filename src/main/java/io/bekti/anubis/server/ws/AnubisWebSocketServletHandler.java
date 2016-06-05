@@ -1,5 +1,7 @@
 package io.bekti.anubis.server.ws;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.bekti.anubis.server.messages.CommitMessage;
 import io.bekti.anubis.server.messages.ProducerMessage;
 import io.bekti.anubis.server.messages.SeekMessage;
@@ -7,13 +9,12 @@ import io.bekti.anubis.server.messages.SubscribeMessage;
 import io.bekti.anubis.server.utils.SharedConfiguration;
 import io.bekti.anubis.server.workers.MainWorkerThread;
 import io.bekti.anubis.server.workers.WatchDogTimer;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.*;
 import org.eclipse.jetty.websocket.api.extensions.Frame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -41,24 +42,24 @@ public class AnubisWebSocketServletHandler {
         log.debug("Received message from {}: {}", session.getRemoteAddress().getHostString(), message);
 
         try {
-            JsonObject payload = new Gson().fromJson(message, JsonObject.class);
-            String event = payload.get("event").getAsString();
+            JsonNode payload = new ObjectMapper().readValue(message, JsonNode.class);
+            String event = payload.get("event").asText();
 
             switch (event) {
                 case "subscribe":
-                    SubscribeMessage subscribeMessage = new Gson().fromJson(message, SubscribeMessage.class);
+                    SubscribeMessage subscribeMessage = new ObjectMapper().readValue(message, SubscribeMessage.class);
                     subscribe(session, subscribeMessage);
                     break;
                 case "publish":
-                    ProducerMessage producerMessage = new Gson().fromJson(message, ProducerMessage.class);
+                    ProducerMessage producerMessage = new ObjectMapper().readValue(message, ProducerMessage.class);
                     publish(session, producerMessage);
                     break;
                 case "commit":
-                    CommitMessage commitMessage = new Gson().fromJson(message, CommitMessage.class);
+                    CommitMessage commitMessage = new ObjectMapper().readValue(message, CommitMessage.class);
                     commit(session, commitMessage);
                     break;
                 case "seek":
-                    SeekMessage seekMessage = new Gson().fromJson(message, SeekMessage.class);
+                    SeekMessage seekMessage = new ObjectMapper().readValue(message, SeekMessage.class);
                     seek(session, seekMessage);
                     break;
                 case "unsubscribe":

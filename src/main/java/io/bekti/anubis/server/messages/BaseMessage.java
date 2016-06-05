@@ -1,10 +1,13 @@
 package io.bekti.anubis.server.messages;
 
 import io.bekti.anubis.server.types.Event;
-import com.google.gson.Gson;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class BaseMessage {
 
+    private static Logger log = LoggerFactory.getLogger(BaseMessage.class);
     protected Event event;
 
     public Event getEvent() {
@@ -16,7 +19,17 @@ public class BaseMessage {
     }
 
     public String toJson() {
-        return new Gson().toJson(this);
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        String json = null;
+
+        try {
+            json = objectMapper.writeValueAsString(this);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+        }
+
+        return json;
     }
 
 }

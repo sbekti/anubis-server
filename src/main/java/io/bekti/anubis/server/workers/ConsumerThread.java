@@ -165,18 +165,25 @@ public class ConsumerThread extends Thread {
 
             switch (seekMessage.getOffset()) {
                 case "beginning":
-                    consumer.seekToBeginning(getPartitionsForTopic(seekMessage.getTopic()));
+                    List<TopicPartition> seekToBeginningPartitions = getPartitionsForTopic(seekMessage.getTopic());
+                    if (seekToBeginningPartitions.size() == 0) break;
+
+                    consumer.seekToBeginning(seekToBeginningPartitions);
                     break;
                 case "end":
-                    consumer.seekToEnd(getPartitionsForTopic(seekMessage.getTopic()));
+                    List<TopicPartition> seekToEndPartitions = getPartitionsForTopic(seekMessage.getTopic());
+                    if (seekToEndPartitions.size() == 0) break;
+
+                    consumer.seekToEnd(seekToEndPartitions);
                     break;
                 default:
-                    consumer.assignment()
-                            .stream()
-                            .filter(partition -> partition.topic().equals(seekMessage.getTopic()))
-                            .forEach(partition ->
-                                    consumer.seek(partition, Long.parseLong(seekMessage.getOffset()))
-                            );
+                    List<TopicPartition> seekPartitions = getPartitionsForTopic(seekMessage.getTopic());
+                    if (seekPartitions.size() == 0) break;
+
+                    for (TopicPartition partition : seekPartitions) {
+                        consumer.seek(partition, Long.parseLong(seekMessage.getOffset()));
+                    }
+
                     break;
             }
         }
