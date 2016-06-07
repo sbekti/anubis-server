@@ -2,7 +2,7 @@ package io.bekti.anubis.server;
 
 import io.bekti.anubis.server.http.AnubisHttpServer;
 import io.bekti.anubis.server.util.DatabaseUtils;
-import io.bekti.anubis.server.util.SharedConfiguration;
+import io.bekti.anubis.server.util.ConfigUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,7 +12,7 @@ public class AnubisServerMain {
 
     public static void main(String[] args) {
         Thread mainThread = Thread.currentThread();
-        SharedConfiguration.loadFromClassPath();
+        ConfigUtils.loadFromClassPath();
 
         DatabaseUtils.initAdminUser();
         DatabaseUtils.startH2Console();

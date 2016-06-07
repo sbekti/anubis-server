@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.bekti.anubis.server.model.dao.Token;
 import io.bekti.anubis.server.model.dao.TokenDao;
 import io.bekti.anubis.server.model.message.*;
-import io.bekti.anubis.server.util.SharedConfiguration;
+import io.bekti.anubis.server.util.ConfigUtils;
 import io.bekti.anubis.server.worker.ClientThread;
 import io.bekti.anubis.server.worker.PingThread;
 import io.bekti.anubis.server.worker.WatchDogThread;
@@ -35,7 +35,7 @@ public class AnubisWebSocketServletHandler {
         createPingThread(session);
         createWatchDogThread(session);
 
-        boolean authenticateClients = SharedConfiguration.getBoolean("authenticate.clients");
+        boolean authenticateClients = ConfigUtils.getBoolean("authenticate.clients");
 
         if (!authenticateClients) {
             createClient(session, new Token());
@@ -175,7 +175,7 @@ public class AnubisWebSocketServletHandler {
     }
 
     private void authenticate(Session session, AuthMessage authMessage) {
-        boolean authenticateClients = SharedConfiguration.getBoolean("authenticate.clients");
+        boolean authenticateClients = ConfigUtils.getBoolean("authenticate.clients");
 
         if (!authenticateClients) {
             authMessage.setSuccess(true);
@@ -185,8 +185,8 @@ public class AnubisWebSocketServletHandler {
         }
 
         String jwt = authMessage.getToken();
-        String secret = SharedConfiguration.getString("access.token.secret");
-        String audience = SharedConfiguration.getString("access.token.audience");
+        String secret = ConfigUtils.getString("access.token.secret");
+        String audience = ConfigUtils.getString("access.token.audience");
 
         try {
             Jws<Claims> jws = Jwts.parser().setSigningKey(secret.getBytes()).parseClaimsJws(jwt);

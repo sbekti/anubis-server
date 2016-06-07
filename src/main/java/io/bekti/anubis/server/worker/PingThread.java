@@ -1,7 +1,7 @@
 package io.bekti.anubis.server.worker;
 
 import io.bekti.anubis.server.model.message.PingMessage;
-import io.bekti.anubis.server.util.SharedConfiguration;
+import io.bekti.anubis.server.util.ConfigUtils;
 import org.eclipse.jetty.websocket.api.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +24,7 @@ public class PingThread extends Thread {
     public void run() {
         running.set(true);
 
-        long pingInterval = SharedConfiguration.getLong("ping.interval.ms");
+        long pingInterval = ConfigUtils.getLong("ping.interval.ms");
 
         while (running.get()) {
             try {
@@ -43,7 +43,7 @@ public class PingThread extends Thread {
     }
 
     private ByteBuffer generatePingPayload() {
-        long watchDogTimeout = SharedConfiguration.getLong("watchdog.timeout.ms");
+        long watchDogTimeout = ConfigUtils.getLong("watchdog.timeout.ms");
 
         PingMessage pingMessage = new PingMessage();
         pingMessage.setWatchDogTimeout(watchDogTimeout);

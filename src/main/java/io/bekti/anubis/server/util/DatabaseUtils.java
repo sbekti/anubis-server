@@ -15,14 +15,14 @@ public class DatabaseUtils {
     private static final Logger log = LoggerFactory.getLogger(DatabaseUtils.class);
 
     public static void initAdminUser() {
-        String adminName = SharedConfiguration.getString("admin.default.name");
+        String adminName = ConfigUtils.getString("admin.default.name");
 
         User adminUser = UserDao.getByName(adminName);
 
         if (adminUser != null) return;
 
-        String defaultPassword = SharedConfiguration.getString("admin.default.password");
-        int rounds = SharedConfiguration.getInteger("bcrypt.rounds");
+        String defaultPassword = ConfigUtils.getString("admin.default.password");
+        int rounds = ConfigUtils.getInteger("bcrypt.rounds");
         String hashedPassword = BCrypt.hashpw(defaultPassword, BCrypt.gensalt(rounds));
 
         adminUser = new User();
@@ -33,13 +33,13 @@ public class DatabaseUtils {
     }
 
     public static void startH2Console() {
-        boolean enabled = SharedConfiguration.getBoolean("h2.console.enabled");
+        boolean enabled = ConfigUtils.getBoolean("h2.console.enabled");
 
         if (!enabled) return;
 
-        String port = SharedConfiguration.getString("h2.console.port");
-        boolean enableSSL = SharedConfiguration.getBoolean("h2.console.enable.ssl");
-        boolean allowOthers = SharedConfiguration.getBoolean("h2.console.allow.others");
+        String port = ConfigUtils.getString("h2.console.port");
+        boolean enableSSL = ConfigUtils.getBoolean("h2.console.enable.ssl");
+        boolean allowOthers = ConfigUtils.getBoolean("h2.console.allow.others");
 
         List<String> params = new ArrayList<>();
         params.add("-webPort");

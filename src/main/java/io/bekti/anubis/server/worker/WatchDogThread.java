@@ -1,6 +1,6 @@
 package io.bekti.anubis.server.worker;
 
-import io.bekti.anubis.server.util.SharedConfiguration;
+import io.bekti.anubis.server.util.ConfigUtils;
 import org.eclipse.jetty.websocket.api.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +24,7 @@ public class WatchDogThread extends Thread {
     public void run() {
         running.set(true);
 
-        long watchDogTimeout = SharedConfiguration.getLong("watchdog.timeout.ms");
+        long watchDogTimeout = ConfigUtils.getLong("watchdog.timeout.ms");
 
         while (running.get()) {
             try {

@@ -20,37 +20,37 @@ public class HibernateUtils {
 
         configuration.setProperty(
                 "hibernate.connection.driver_class",
-                SharedConfiguration.getString("hibernate.connection.driver_class")
+                ConfigUtils.getString("hibernate.connection.driver_class")
         );
 
         configuration.setProperty(
                 "hibernate.connection.url",
-                SharedConfiguration.getString("hibernate.connection.url")
+                ConfigUtils.getString("hibernate.connection.url")
         );
 
         configuration.setProperty(
                 "hibernate.connection.username",
-                SharedConfiguration.getString("hibernate.connection.username")
+                ConfigUtils.getString("hibernate.connection.username")
         );
 
         configuration.setProperty(
                 "hibernate.connection.password",
-                SharedConfiguration.getString("hibernate.connection.password")
+                ConfigUtils.getString("hibernate.connection.password")
         );
 
         configuration.setProperty(
                 "hibernate.dialect",
-                SharedConfiguration.getString("hibernate.dialect")
+                ConfigUtils.getString("hibernate.dialect")
         );
 
         configuration.setProperty(
                 "hibernate.show_sql",
-                SharedConfiguration.getString("hibernate.show_sql")
+                ConfigUtils.getString("hibernate.show_sql")
         );
 
         configuration.setProperty(
                 "hibernate.hbm2ddl.auto",
-                SharedConfiguration.getString("hibernate.hbm2ddl.auto")
+                ConfigUtils.getString("hibernate.hbm2ddl.auto")
         );
 
         configuration.addAnnotatedClass(User.class);

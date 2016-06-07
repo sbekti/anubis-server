@@ -2,8 +2,8 @@ package io.bekti.anubis.server.worker;
 
 import io.bekti.anubis.server.model.message.*;
 import io.bekti.anubis.server.model.kafka.KafkaPartition;
-import io.bekti.anubis.server.util.SharedConfiguration;
-import io.bekti.anubis.server.util.TopicInitializer;
+import io.bekti.anubis.server.util.ConfigUtils;
+import io.bekti.anubis.server.util.KafkaUtils;
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
@@ -38,7 +38,7 @@ public class ConsumerThread extends Thread {
     public void run() {
         running.set(true);
 
-        topics.forEach(TopicInitializer::initializeTopic);
+        topics.forEach(KafkaUtils::initializeTopic);
 
         consumer = getConsumer(groupId);
 
@@ -142,10 +142,10 @@ public class ConsumerThread extends Thread {
     private KafkaConsumer<String, String> getConsumer(String groupId) {
         Properties props = new Properties();
 
-        props.put("bootstrap.servers", SharedConfiguration.getString("bootstrap.servers"));
-        props.put("enable.auto.commit", SharedConfiguration.getString("enable.auto.commit"));
-        props.put("key.deserializer", SharedConfiguration.getString("key.deserializer"));
-        props.put("value.deserializer", SharedConfiguration.getString("value.deserializer"));
+        props.put("bootstrap.servers", ConfigUtils.getString("bootstrap.servers"));
+        props.put("enable.auto.commit", ConfigUtils.getString("enable.auto.commit"));
+        props.put("key.deserializer", ConfigUtils.getString("key.deserializer"));
+        props.put("value.deserializer", ConfigUtils.getString("value.deserializer"));
         props.put("group.id", groupId);
 
         return new KafkaConsumer<>(props);

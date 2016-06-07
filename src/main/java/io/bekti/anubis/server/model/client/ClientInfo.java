@@ -2,13 +2,12 @@ package io.bekti.anubis.server.model.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.bekti.anubis.server.model.dao.Token;
-import io.bekti.anubis.server.model.message.BaseMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ClientInfo {
 
-    private static final Logger log = LoggerFactory.getLogger(BaseMessage.class);
+    private static final Logger log = LoggerFactory.getLogger(ClientInfo.class);
 
     private String hostString;
     private Token token;

@@ -5,7 +5,7 @@ import io.bekti.anubis.server.model.dao.TokenDao;
 import io.bekti.anubis.server.model.dao.User;
 import io.bekti.anubis.server.model.token.TokenPatch;
 import io.bekti.anubis.server.model.token.TokenRequest;
-import io.bekti.anubis.server.util.SharedConfiguration;
+import io.bekti.anubis.server.util.ConfigUtils;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 
@@ -51,8 +51,8 @@ public class Tokens {
                            TokenRequest tokenRequest) {
 
         String uuid = UUID.randomUUID().toString();
-        String secret = SharedConfiguration.getString("access.token.secret");
-        String audience = SharedConfiguration.getString("access.token.audience");
+        String secret = ConfigUtils.getString("access.token.secret");
+        String audience = ConfigUtils.getString("access.token.audience");
         long unixTime = System.currentTimeMillis();
         long expiryTime = tokenRequest.getExpiry() * 1000L;
 

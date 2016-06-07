@@ -1,8 +1,8 @@
 package io.bekti.anubis.server.worker;
 
 import io.bekti.anubis.server.model.message.ProducerMessage;
-import io.bekti.anubis.server.util.SharedConfiguration;
-import io.bekti.anubis.server.util.TopicInitializer;
+import io.bekti.anubis.server.util.ConfigUtils;
+import io.bekti.anubis.server.util.KafkaUtils;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
@@ -41,7 +41,7 @@ public class ProducerThread extends Thread {
                 String key = producerMessage.getKey();
                 String value = producerMessage.getValue();
 
-                TopicInitializer.initializeTopic(topic);
+                KafkaUtils.initializeTopic(topic);
 
                 producer.send(new ProducerRecord<>(topic, key, value), (metadata, exception) -> {
                     if (exception != null) {
@@ -74,14 +74,14 @@ public class ProducerThread extends Thread {
     private KafkaProducer<String, String> getProducer() {
         Properties props = new Properties();
 
-        props.put("bootstrap.servers", SharedConfiguration.getString("bootstrap.servers"));
-        props.put("acks", SharedConfiguration.getString("acks"));
-        props.put("retries", SharedConfiguration.getString("retries"));
-        props.put("batch.size", SharedConfiguration.getString("batch.size"));
-        props.put("linger.ms", SharedConfiguration.getString("linger.ms"));
-        props.put("buffer.memory", SharedConfiguration.getString("buffer.memory"));
-        props.put("key.serializer", SharedConfiguration.getString("key.serializer"));
-        props.put("value.serializer", SharedConfiguration.getString("value.serializer"));
+        props.put("bootstrap.servers", ConfigUtils.getString("bootstrap.servers"));
+        props.put("acks", ConfigUtils.getString("acks"));
+        props.put("retries", ConfigUtils.getString("retries"));
+        props.put("batch.size", ConfigUtils.getString("batch.size"));
+        props.put("linger.ms", ConfigUtils.getString("linger.ms"));
+        props.put("buffer.memory", ConfigUtils.getString("buffer.memory"));
+        props.put("key.serializer", ConfigUtils.getString("key.serializer"));
+        props.put("value.serializer", ConfigUtils.getString("value.serializer"));
 
         return new KafkaProducer<>(props);
     }

@@ -19,9 +19,6 @@ public enum MessageEvent {
     @JsonProperty("ping")
     PING,
 
-    @JsonProperty("provision")
-    PROVISION,
-
     @JsonProperty("publish")
     PUBLISH,
 

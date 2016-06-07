@@ -3,7 +3,7 @@ package io.bekti.anubis.server.http.rest;
 import io.bekti.anubis.server.model.dao.User;
 import io.bekti.anubis.server.model.dao.UserDao;
 import io.bekti.anubis.server.util.BCrypt;
-import io.bekti.anubis.server.util.SharedConfiguration;
+import io.bekti.anubis.server.util.ConfigUtils;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
@@ -44,7 +44,7 @@ public class Users {
 
         if (existingUser != null) throw new WebApplicationException();
 
-        int rounds = SharedConfiguration.getInteger("bcrypt.rounds");
+        int rounds = ConfigUtils.getInteger("bcrypt.rounds");
         String hashedPassword = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt(rounds));
         user.setPassword(hashedPassword);
 
@@ -70,7 +70,7 @@ public class Users {
 
         if (existingUser == null) throw new WebApplicationException();
 
-        int rounds = SharedConfiguration.getInteger("bcrypt.rounds");
+        int rounds = ConfigUtils.getInteger("bcrypt.rounds");
         String hashedPassword = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt(rounds));
 
         existingUser.setName(user.getName());

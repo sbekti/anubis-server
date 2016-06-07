@@ -4,7 +4,7 @@ import io.bekti.anubis.server.model.exceptionmapper.NotFoundExceptionMapper;
 import io.bekti.anubis.server.model.exceptionmapper.RuntimeExceptionMapper;
 import io.bekti.anubis.server.model.exceptionmapper.WebApplicationExceptionMapper;
 import io.bekti.anubis.server.worker.ClientThread;
-import io.bekti.anubis.server.util.SharedConfiguration;
+import io.bekti.anubis.server.util.ConfigUtils;
 import io.bekti.anubis.server.http.rest.AuthFilter;
 import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.servlet.ServletContextHandler;
@@ -33,8 +33,8 @@ public class AnubisHttpServer extends Thread {
 
     @Override
     public void run() {
-        int httpPort = SharedConfiguration.getInteger("ws.server.port");
-        int httpsPort = SharedConfiguration.getInteger("wss.server.port");
+        int httpPort = ConfigUtils.getInteger("ws.server.port");
+        int httpsPort = ConfigUtils.getInteger("wss.server.port");
 
         log.info("Starting server on port {} (HTTP) and {} (HTTPS)", httpPort, httpsPort);
         running.set(true);
@@ -108,9 +108,9 @@ public class AnubisHttpServer extends Thread {
         https.addCustomizer(new SecureRequestCustomizer());
 
         SslContextFactory sslContextFactory = new SslContextFactory();
-        sslContextFactory.setKeyStorePath(SharedConfiguration.getString("ssl.keystore.path"));
-        sslContextFactory.setKeyStorePassword(SharedConfiguration.getString("ssl.keystore.password"));
-        sslContextFactory.setKeyManagerPassword(SharedConfiguration.getString("ssl.keymanager.password"));
+        sslContextFactory.setKeyStorePath(ConfigUtils.getString("ssl.keystore.path"));
+        sslContextFactory.setKeyStorePassword(ConfigUtils.getString("ssl.keystore.password"));
+        sslContextFactory.setKeyManagerPassword(ConfigUtils.getString("ssl.keymanager.password"));
 
         ServerConnector sslConnector = new ServerConnector(server,
                 new SslConnectionFactory(sslContextFactory, "http/1.1"),
