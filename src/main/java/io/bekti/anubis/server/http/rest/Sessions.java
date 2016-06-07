@@ -61,7 +61,7 @@ public class Sessions {
 
             if (clientInfo.getToken().getUuid().equals(uuid)) {
                 try {
-                    clientThread.getSession().disconnect();
+                    clientThread.getSession().close();
                 } catch (Exception e) {
                     log.error(e.getMessage(), e);
                 }
