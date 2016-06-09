@@ -38,3 +38,5 @@ task getDeps(type: Copy) {
     from configurations.runtime
     into 'libs/'
 }
+
+build.dependsOn getDeps

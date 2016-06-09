@@ -46,7 +46,7 @@ public class ConsumerThread extends Thread {
 
             @Override
             public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
-                List<KafkaPartition> revokedPartitions = new LinkedList<>();
+                List<KafkaPartition> revokedPartitions = new ArrayList<>();
 
                 for (TopicPartition partition : partitions) {
                     revokedPartitions.add(new KafkaPartition(partition.topic(), partition.partition()));
@@ -60,7 +60,7 @@ public class ConsumerThread extends Thread {
 
             @Override
             public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
-                List<KafkaPartition> assignedPartitions = new LinkedList<>();
+                List<KafkaPartition> assignedPartitions = new ArrayList<>();
 
                 for (TopicPartition partition : partitions) {
                     assignedPartitions.add(new KafkaPartition(partition.topic(), partition.partition()));
