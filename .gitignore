@@ -9,6 +9,7 @@ hs_err_pid*
 # Gradle
 .gradle/
 build/
+libs/
 
 # Mac
 .DS_Store

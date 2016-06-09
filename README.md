@@ -16,7 +16,7 @@ gradle build
 ~~~
 Edit the config file as necessary:
 ~~~shell
-vim conf/server.properties
+vim conf/config.properties
 ~~~
 Run the server:
 ~~~shell

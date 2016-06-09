@@ -1,19 +1,23 @@
 package io.bekti.anubis.server;
 
-import io.bekti.anubis.server.ws.AnubisWebSocketServer;
-import io.bekti.anubis.server.utils.SharedConfiguration;
+import io.bekti.anubis.server.http.AnubisHttpServer;
+import io.bekti.anubis.server.util.DatabaseUtils;
+import io.bekti.anubis.server.util.ConfigUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class AnubisServerMain {
 
-    private static Logger log = LoggerFactory.getLogger(AnubisServerMain.class);
+    private static final Logger log = LoggerFactory.getLogger(AnubisServerMain.class);
 
     public static void main(String[] args) {
         Thread mainThread = Thread.currentThread();
-        SharedConfiguration.loadFromFile(System.getProperty("config"));
+        ConfigUtils.loadFromClassPath();
 
-        AnubisWebSocketServer server = new AnubisWebSocketServer();
+        DatabaseUtils.initAdminUser();
+        DatabaseUtils.startH2Console();
+
+        AnubisHttpServer server = new AnubisHttpServer();
         server.start();
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
