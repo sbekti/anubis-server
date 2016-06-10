@@ -1,8 +1,6 @@
 package io.bekti.anubis.server.http;
 
-import io.bekti.anubis.server.model.exceptionmapper.NotFoundExceptionMapper;
-import io.bekti.anubis.server.model.exceptionmapper.RuntimeExceptionMapper;
-import io.bekti.anubis.server.model.exceptionmapper.WebApplicationExceptionMapper;
+import io.bekti.anubis.server.model.exception.WebApplicationExceptionMapper;
 import io.bekti.anubis.server.worker.ClientThread;
 import io.bekti.anubis.server.util.ConfigUtils;
 import io.bekti.anubis.server.http.rest.AuthFilter;
@@ -13,6 +11,7 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.websocket.api.Session;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,11 +86,10 @@ public class AnubisHttpServer extends Thread {
 
         ResourceConfig resourceConfig = new ResourceConfig()
                 .packages("io.bekti.anubis.server.http.rest")
+                .property(ServerProperties.BV_SEND_ERROR_IN_RESPONSE, true)
                 .register(JacksonFeature.class)
                 .register(AuthFilter.class)
-                .register(WebApplicationExceptionMapper.class)
-                .register(RuntimeExceptionMapper.class)
-                .register(NotFoundExceptionMapper.class);
+                .register(WebApplicationExceptionMapper.class);
 
         ServletHolder jerseyServlet = new ServletHolder(new ServletContainer(resourceConfig));
         jerseyServlet.setInitOrder(0);

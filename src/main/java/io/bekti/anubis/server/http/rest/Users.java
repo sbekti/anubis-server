@@ -1,10 +1,16 @@
 package io.bekti.anubis.server.http.rest;
 
+import io.bekti.anubis.server.http.annotation.PATCH;
 import io.bekti.anubis.server.model.dao.User;
 import io.bekti.anubis.server.model.dao.UserDao;
+import io.bekti.anubis.server.model.user.UserCreateRequest;
+import io.bekti.anubis.server.model.user.UserPatchRequest;
+import io.bekti.anubis.server.model.user.UserPutRequest;
 import io.bekti.anubis.server.util.BCrypt;
 import io.bekti.anubis.server.util.ConfigUtils;
 
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 import java.net.URI;
@@ -39,13 +45,18 @@ public class Users {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response create(@Context UriInfo uriInfo,
-                           User user) {
-        User existingUser = UserDao.getByName(user.getName());
+                           @NotNull @Valid UserCreateRequest userCreateRequest) {
+        User existingUser = UserDao.getByName(userCreateRequest.getName());
 
-        if (existingUser != null) throw new WebApplicationException();
+        if (existingUser != null) {
+            throw new WebApplicationException("Name is already taken.", Response.Status.BAD_REQUEST);
+        }
 
         int rounds = ConfigUtils.getInteger("bcrypt.rounds");
-        String hashedPassword = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt(rounds));
+        String hashedPassword = BCrypt.hashpw(userCreateRequest.getPassword(), BCrypt.gensalt(rounds));
+
+        User user = new User();
+        user.setName(userCreateRequest.getName());
         user.setPassword(hashedPassword);
 
         Integer id = UserDao.add(user);
@@ -54,7 +65,7 @@ public class Users {
             URI uri = uriInfo.getAbsolutePathBuilder().path("/" + String.valueOf(id)).build();
             return Response.created(uri).entity(user).build();
         } else {
-            throw new WebApplicationException();
+            throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -64,17 +75,44 @@ public class Users {
     @Produces(MediaType.APPLICATION_JSON)
     public Response put(@PathParam("id") int id,
                         @Context UriInfo uriInfo,
-                        User user) {
+                        @NotNull @Valid UserPutRequest userPutRequest) {
 
         User existingUser = UserDao.getById(id);
 
-        if (existingUser == null) throw new WebApplicationException();
+        if (existingUser == null) throw new NotFoundException();
+
+        existingUser.setName(userPutRequest.getName());
 
         int rounds = ConfigUtils.getInteger("bcrypt.rounds");
-        String hashedPassword = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt(rounds));
-
-        existingUser.setName(user.getName());
+        String hashedPassword = BCrypt.hashpw(userPutRequest.getPassword(), BCrypt.gensalt(rounds));
         existingUser.setPassword(hashedPassword);
+
+        UserDao.update(existingUser);
+
+        return Response.noContent().build();
+    }
+
+    @PATCH
+    @Path("/{id}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response patch(@PathParam("id") int id,
+                          @Context UriInfo uriInfo,
+                          @NotNull @Valid UserPatchRequest userPatchRequest) {
+
+        User existingUser = UserDao.getById(id);
+
+        if (existingUser == null) throw new NotFoundException();
+
+        if (userPatchRequest.isNameSet()) {
+            existingUser.setName(userPatchRequest.getName());
+        }
+
+        if (userPatchRequest.isPasswordSet()) {
+            int rounds = ConfigUtils.getInteger("bcrypt.rounds");
+            String hashedPassword = BCrypt.hashpw(userPatchRequest.getPassword(), BCrypt.gensalt(rounds));
+            existingUser.setPassword(hashedPassword);
+        }
 
         UserDao.update(existingUser);
 
