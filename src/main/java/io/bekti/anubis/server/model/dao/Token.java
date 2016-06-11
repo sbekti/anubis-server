@@ -18,6 +18,10 @@ public class Token {
     private String uuid;
 
     @NotBlank
+    @Column(name = "name")
+    private String name;
+
+    @NotBlank
     @Column(name = "token", length = 512)
     private String token;
 
@@ -39,6 +43,14 @@ public class Token {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getToken() {

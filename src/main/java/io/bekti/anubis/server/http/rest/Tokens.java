@@ -1,14 +1,17 @@
 package io.bekti.anubis.server.http.rest;
 
+import io.bekti.anubis.server.http.annotation.PATCH;
 import io.bekti.anubis.server.model.dao.Token;
 import io.bekti.anubis.server.model.dao.TokenDao;
 import io.bekti.anubis.server.model.dao.User;
-import io.bekti.anubis.server.model.token.TokenPatch;
-import io.bekti.anubis.server.model.token.TokenRequest;
+import io.bekti.anubis.server.model.token.TokenPatchRequest;
+import io.bekti.anubis.server.model.token.TokenCreateRequest;
 import io.bekti.anubis.server.util.ConfigUtils;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.*;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.*;
@@ -48,13 +51,13 @@ public class Tokens {
     @Produces(MediaType.APPLICATION_JSON)
     public Response create(@Context ContainerRequestContext containerRequestContext,
                            @Context UriInfo uriInfo,
-                           TokenRequest tokenRequest) {
+                           @NotNull @Valid TokenCreateRequest tokenCreateRequest) {
 
         String uuid = UUID.randomUUID().toString();
         String secret = ConfigUtils.getString("access.token.secret");
         String audience = ConfigUtils.getString("access.token.audience");
         long unixTime = System.currentTimeMillis();
-        long expiryTime = tokenRequest.getExpiry() * 1000L;
+        long expiryTime = tokenCreateRequest.getExpiry() * 1000L;
 
         User user = (User) containerRequestContext.getProperty("user");
 
@@ -65,32 +68,42 @@ public class Tokens {
                 .setIssuedAt(new Date(unixTime))
                 .setExpiration(new Date(unixTime + expiryTime))
                 .claim("uid", user.getId())
+                .claim("name", tokenCreateRequest.getName())
                 .signWith(SignatureAlgorithm.HS256, secret.getBytes())
                 .compact();
 
         Token token = new Token();
         token.setUuid(uuid);
+        token.setName(tokenCreateRequest.getName());
         token.setToken(jwt);
         token.setRevoked(false);
 
-        TokenDao.add(token);
+        Integer id = TokenDao.add(token);
 
-        URI uri = uriInfo.getAbsolutePathBuilder().path("/" + uuid).build();
-
-        return Response.created(uri).entity(token).build();
+        if (id != null) {
+            URI uri = uriInfo.getAbsolutePathBuilder().path("/" + uuid).build();
+            return Response.created(uri).entity(token).build();
+        } else {
+            throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
+        }
     }
 
-    @PUT
+    @PATCH
     @Path("/{uuid}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response put(@PathParam("uuid") String uuid,
-                        TokenPatch tokenPatch) {
+    public Response patch(@PathParam("uuid") String uuid,
+                          @NotNull @Valid TokenPatchRequest tokenPatchRequest) {
         Token token = TokenDao.getByUUID(uuid);
 
         if (token != null) {
-            token.setRevoked(tokenPatch.isRevoked());
+
+            if (tokenPatchRequest.isRevokedSet()) {
+                token.setRevoked(tokenPatchRequest.isRevoked());
+            }
+
             TokenDao.update(token);
+
             return Response.noContent().build();
         } else {
             throw new NotFoundException();
